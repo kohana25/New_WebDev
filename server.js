@@ -1,18 +1,20 @@
 const express = require('express');
 const app = express();
 const port = 3000;
+const db = require('./db'); 
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // To parse form data from POST
-app.use(express.static('public'));
 app.set('view engine', 'ejs');
+app.use(express.static('public'));
 
-let users = [
-  { id: 1, name: "John Doe", email: "Johndoe@gmail.com" },
-  { id: 2, name: "Anne Klutz", email: "Anne Klutz@gmail.com" },
-  { id: 3, name: "Yuriya Mahi", email: "Yuriyamahi@gmail.com" },
-];
+
+// let users = [
+//   { id: 1, name: "John Doe", email: "Johndoe@gmail.com" },
+//   { id: 2, name: "Anne Klutz", email: "Anne Klutz@gmail.com" },
+//   { id: 3, name: "Yuriya Mahi", email: "Yuriyamahi@gmail.com" },
+// ];
 
 // const users = [
 //   { id: 1, name: "John Doe" },
@@ -21,6 +23,12 @@ let users = [
 // ];
 
 // Routes
+app.get("/users", (req, res) => {
+  const users = db.prepare("SELECT * FROM users").all();
+  res.render("index", { users });
+});
+
+
 app.get('/', (req, res) => {
   res.send('HOMEPAGE');
 });
@@ -51,6 +59,11 @@ app.post('/users/:id', (req, res) => {
   }
   res.redirect("/users");
 });
+app.post("/users", (req, res) => {
+  const {name, email} = req.body;
+  db.prepare("INSERT INTO users (name, email) VALUES (?, ?)").run(name, email);
+  res.redirect("/users");
+});
 
 app.post('/users', (req, res) => { // Ang post is for submitting
   const { name, email } = req.body;
@@ -76,6 +89,11 @@ app.post('/users', (req, res) => { // Ang post is for submitting
 app.post('/users/:id/delete', (req, res) => {
   users = users.filter(user => user.id !== parseInt(req.params.id));
   res.redirect('/users');
+});
+
+app.delete('/users/:id', (req, res) => { // Delete user by ID
+  users = users.filter(user => user.id !== parseInt(req.params.id));
+  res.json({ message: 'User deleted' });
 });
 
 app.listen(port, () => {
